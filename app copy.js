@@ -69,38 +69,53 @@ class WebScraper {
         const imgPath = path.parse(imgSrc);
         const imgName = imgPath.base;
         fs.writeFileSync(path.join(newOutputPath, 'images', imgName), imgData.data);
+        // change the img element to point to the local file path
+        $(images[i]).attr('src', `./images/${imgName}`);
       }
 
       // download and save CSS files
       const cssLinks = $('link[rel="stylesheet"]');
       for (let i = 0; i < cssLinks.length; i++) {
-        const cssHref = cssLinks[i].attribs.href;
-        const cssUrl = new URL(cssHref, baseUrl).href;
-        const cssData = await axios.get(cssUrl);
-        const parsedUrl = qs.parse(cssHref);
-        let cssName = "";
-        if (parsedUrl.url) cssName = parsedUrl.url.split('/').pop();
-        // check if file exists before write
-        const filePath = path.join(newOutputPath, 'css', cssName);
-        if (!fs.existsSync(filePath)) {
-          fs.writeFileSync(filePath, cssData.data);
-        }
-        // change the link element to point to the local file path
-        $(cssLinks[i]).attr('href', `./css/${cssName}`);
+          let cssHref = cssLinks[i].attribs.href;
+          if (!/^(?:[a-z]+:)?\/\//i.test(cssHref)) {
+              cssHref = baseUrl + cssHref;
+          }
+          const cssUrl = new URL(cssHref).href;
+          const cssData = await axios.get(cssUrl);
+          const cssName = path.basename(cssHref);
+          // check if file exists before write
+          const filePath = path.join(newOutputPath, 'css', cssName);
+          if (!fs.existsSync(filePath)) {
+              fs.writeFileSync(filePath, cssData.data);
+          }
+          // change the link element to point to the local file path
+          $(cssLinks[i]).attr('href', `./css/${cssName}`);
       }
-
+      
       // download and save JS files
       const jsLinks = $('script[src]');
       for (let i = 0; i < jsLinks.length; i++) {
-        const jsSrc = jsLinks[i].attribs.src;
-        const jsUrl = new URL(jsSrc, baseUrl).href;
-        const jsData = await axios.get(jsUrl);
-        const jsPath = path.parse(jsSrc);
-        const jsName = jsPath.base;
-        fs.writeFileSync(path.join(newOutputPath, 'js', jsName), jsData.data);
-        // change the script element to point to the local file path
-        $(jsLinks[i]).attr('src', `./js/${jsName}`);
+          let jsSrc = jsLinks[i].attribs.src;
+          if (!/^(?:[a-z]+:)?\/\//i.test(jsSrc)) {
+              jsSrc = baseUrl + jsSrc;
+          }
+          const jsUrl = new URL(jsSrc).href;
+          const jsData = await axios.get(jsUrl);
+          const jsName = path.basename(jsSrc);
+          // check if file exists before write
+          const filePath = path.join(newOutputPath, 'js', jsName);
+          if (!fs.existsSync(filePath)) {
+              fs.writeFileSync(filePath, jsData.data);
+          }
+          // change the script element to point to the local file path
+          $(jsLinks[i]).attr('src', `./js/${jsName}`);
       }
+      
+      
+
+      // write the modified HTML to file
+      fs.writeFileSync(`${newOutputPath}/output.html`, $.html());
+      console.log(`Data saved to ${newOutputPath}`);
     } catch (err) {
       console.error(err);
     }
