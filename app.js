@@ -71,23 +71,29 @@ class WebScraper {
         fs.writeFileSync(path.join(newOutputPath, 'images', imgName), imgData.data);
       }
 
-      // download and save CSS files
+     //FIXME CSS files are not generated // download and save CSS files
       const cssLinks = $('link[rel="stylesheet"]');
       for (let i = 0; i < cssLinks.length; i++) {
-        const cssHref = cssLinks[i].attribs.href;
-        const cssUrl = new URL(cssHref, baseUrl).href;
-        const cssData = await axios.get(cssUrl);
-        const parsedUrl = qs.parse(cssHref);
-        let cssName = "";
-        if (parsedUrl.url) cssName = parsedUrl.url.split('/').pop();
-        // check if file exists before write
-        const filePath = path.join(newOutputPath, 'css', cssName);
-        if (!fs.existsSync(filePath)) {
-          fs.writeFileSync(filePath, cssData.data);
+        try {
+          const cssHref = cssLinks[i].attribs.href;
+          if (!cssHref) continue;
+          const cssUrl = new URL(cssHref, baseUrl).href;
+          const cssData = await axios.get(cssUrl);
+          const parsedUrl = qs.parse(cssHref);
+          let cssName = "";
+          if (parsedUrl.url) cssName = parsedUrl.url.split('/').pop();
+          // check if file exists before write
+          const filePath = path.join(newOutputPath, 'css', cssName);
+          if (!fs.existsSync(filePath)) {
+            fs.writeFileSync(filePath, cssData.data);
+          }
+          // change the link element to point to the local file path
+          $(cssLinks[i]).attr('href', `./css/${cssName}`);
+        } catch (error) {
+          console.error(`Error downloading CSS file: ${error}`);
         }
-        // change the link element to point to the local file path
-        $(cssLinks[i]).attr('href', `./css/${cssName}`);
       }
+
 
       // download and save JS files
       const jsLinks = $('script[src]');
