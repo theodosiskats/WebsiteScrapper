@@ -58,7 +58,7 @@ class WebScraper {
         fs.mkdirSync(path.join(newOutputPath, 'js'));
       }
       // save the HTML
-      fs.writeFileSync(`${newOutputPath}/output.html`, html);
+      fs.writeFileSync(`${newOutputPath}/index.html`, html);
 
       // download and save images
       const images = $('img');
